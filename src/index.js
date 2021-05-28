@@ -1,53 +1,13 @@
 import { GraphQLServer } from "graphql-yoga";
+import { posts } from "./posts";
+import { users } from "./users";
 
-//Demo user data
-const users = [
-  {
-    id: "1",
-    name: "Don Rick",
-    email: "rick@rico.com",
-    age: 29,
-  },
-  {
-    id: "2",
-    name: "Patricio",
-    email: "pat@tricio.com",
-    age: 18,
-  },
-  {
-    id: "Sandy",
-    name: "Sandy",
-    email: "sandy@sand.com",
-  },
-];
-
-const posts = [
-  {
-    id: "1",
-    title: "Don Quijote",
-    body: "En un lugar de la Mancha de cuyo nombre no quiero acordarme",
-    published: true,
-  },
-  {
-    id: "2",
-    title: "El cid",
-    body: "Erase una vez un patito feo que se convirtio en un Ogro verde. Luego salvo a la princesa y todos vivieron felices por siempre.",
-    published: false,
-  },
-  {
-    id: "3",
-    title: "Mi noches de soledad",
-    body: "Quizas amaste a quien no debiste amar, tomaste una decision fatal, te lastimaron y eso to hizo mal. Y yo lo tuve que pagar. QUIZAS!!",
-    published: true,
-  },
-];
 //Type definitions (schema)
 const typeDefs = `
     type Query {
         users(query: String): [User!]!
         posts(query: String): [Post!]!
         me: User!
-        post: Post!
         }
 
     type User {
@@ -55,14 +15,17 @@ const typeDefs = `
         name: String!
         email: String
         age: Int
+        posts: [Post!]!
     }
     type Post {
         id: ID!
         title: String!
         body: String!
         published: Boolean!
+        author: User!
     }
 `;
+//this is a unidirectional relationship -- > author: User!
 
 //Resolvers
 const resolvers = {
@@ -97,13 +60,22 @@ const resolvers = {
         age: 29,
       };
     },
-    post() {
-      return {
-        id: "984",
-        title: "Homepage",
-        body: "Example of a post",
-        published: false,
-      };
+  },
+  //relational data for each type
+  //post is the parent argument
+  Post: {
+    author(parent, args, ctx, info) {
+      //parent.author exists here
+      return users.find((user) => {
+        return user.id === parent.author;
+      });
+    },
+  },
+  User: {
+    posts(parent, args, ctx, info) {
+      return posts.filter((post) => {
+        return post.author == parent.id;
+      });
     },
   },
 };
