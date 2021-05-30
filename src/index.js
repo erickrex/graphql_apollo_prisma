@@ -1,126 +1,11 @@
 import { GraphQLServer } from "graphql-yoga";
-//import { posts } from "./posts";
-import { users } from "./users";
-//import { comments } from "./comments";
 import uuidv4 from "uuid/v4";
+import db from "./db";
 
-let posts = [
-  {
-    id: "1",
-    title: "Don Quijotess",
-    body: "En un lugar de la Mancha de cuyo nombre no quiero acordarme",
-    published: true,
-    author: "1",
-  },
-  {
-    id: "2",
-    title: "El cid",
-    body: "Erase una vez un patito feo que se convirtio en un Ogro verde. Luego salvo a la princesa y todos vivieron felices por siempre.",
-    published: false,
-    author: "1",
-  },
-  {
-    id: "3",
-    title: "Mi noches de soledad",
-    body: "Quizas amaste a quien no debiste amar, tomaste una decision fatal, te lastimaron y eso to hizo mal. Y yo lo tuve que pagar. QUIZAS!!",
-    published: true,
-    author: "2",
-  },
-];
-
-let comments = [
-  {
-    id: "1",
-    text: "Austin 3:16 says I just whipped your ass",
-    author: "1",
-    post: "1",
-  },
-  {
-    id: "2",
-    text: "Can you smell what the Rock is cooking",
-    author: "2",
-    post: "2",
-  },
-  {
-    id: "3",
-    text: "To be the man you have to beat the man Woooooo",
-    author: "2",
-    post: "2",
-  },
-  {
-    id: "4",
-    text: "There is only one word to describe you S A W F T saaaawft",
-    author: "3",
-    post: "3",
-  },
-];
-
-//Type definitions (schema)
-//everything inside an input type needs to be an scalar, you cannot have another custom object type inside the arguments atributes
-const typeDefs = `
-    type Query {
-        users(query: String): [User!]!
-        posts(query: String): [Post!]!
-        me: User!
-        comments : [Comment!]!
-        }
-    
-    type Mutation {
-        createUser(data: CreateUserInput!) : User!
-        deleteUser(id: ID!): User!
-        
-        createPost(data: CreatePostInput!) : Post!
-        deletePost(id: ID!): Post! 
-
-        createComment(data: CreateCommentInput!) : Comment!
-        deleteComment(id: ID!): Comment!
-    }
-    
-    input CreateUserInput {
-        name: String!
-        email: String!
-        age: Int!
-    }
-
-    input CreatePostInput {
-        title: String!
-        body: String!
-        published: Boolean! 
-        author: ID!
-    }
-
-    input CreateCommentInput {
-        text: String!
-        author: ID!
-        post: ID!
-    }
-
-    type User {
-        id: ID!
-        name: String!
-        email: String
-        age: Int
-        posts: [Post!]!
-        comments : [Comment!]!
-    }
-
-    type Post {
-        id: ID!
-        title: String!
-        body: String!
-        published: Boolean!
-        author: User!
-        comments: [Comment!]!
-    }
-
-    type Comment {
-        id: ID!
-        text: String!
-        author: User!
-        post: Post!
-    }
-`;
-//this is a unidirectional relationship -- > author: User!
+// Type definitions (schema)
+// everything inside an input type needs to be an scalar, you cannot have another custom object type inside the arguments atributes
+// this is a unidirectional relationship -- > author: User!
+//TYPEDEFS MOVED TO SCHEMA.GRAPHQL
 
 //Resolvers
 const resolvers = {
@@ -294,8 +179,12 @@ const resolvers = {
 };
 
 const server = new GraphQLServer({
-  typeDefs: typeDefs,
-  resolvers: resolvers,
+  //typeDefs: typeDefs,
+  typeDefs: "./src/schema.graphql",
+  resolvers,
+  context: {
+    db: db,
+  },
 });
 
 server.start(() => {
