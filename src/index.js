@@ -1,8 +1,60 @@
 import { GraphQLServer } from "graphql-yoga";
-import { posts } from "./posts";
+//import { posts } from "./posts";
 import { users } from "./users";
-import { comments } from "./comments";
+//import { comments } from "./comments";
 import uuidv4 from "uuid/v4";
+
+let posts = [
+  {
+    id: "1",
+    title: "Don Quijotess",
+    body: "En un lugar de la Mancha de cuyo nombre no quiero acordarme",
+    published: true,
+    author: "1",
+  },
+  {
+    id: "2",
+    title: "El cid",
+    body: "Erase una vez un patito feo que se convirtio en un Ogro verde. Luego salvo a la princesa y todos vivieron felices por siempre.",
+    published: false,
+    author: "1",
+  },
+  {
+    id: "3",
+    title: "Mi noches de soledad",
+    body: "Quizas amaste a quien no debiste amar, tomaste una decision fatal, te lastimaron y eso to hizo mal. Y yo lo tuve que pagar. QUIZAS!!",
+    published: true,
+    author: "2",
+  },
+];
+
+let comments = [
+  {
+    id: "1",
+    text: "Austin 3:16 says I just whipped your ass",
+    author: "1",
+    post: "1",
+  },
+  {
+    id: "2",
+    text: "Can you smell what the Rock is cooking",
+    author: "2",
+    post: "2",
+  },
+  {
+    id: "3",
+    text: "To be the man you have to beat the man Woooooo",
+    author: "2",
+    post: "2",
+  },
+  {
+    id: "4",
+    text: "There is only one word to describe you S A W F T saaaawft",
+    author: "3",
+    post: "3",
+  },
+];
+
 //Type definitions (schema)
 //everything inside an input type needs to be an scalar, you cannot have another custom object type inside the arguments atributes
 const typeDefs = `
@@ -16,10 +68,12 @@ const typeDefs = `
     type Mutation {
         createUser(data: CreateUserInput!) : User!
         deleteUser(id: ID!): User!
+        
+        createPost(data: CreatePostInput!) : Post!
+        deletePost(id: ID!): Post! 
 
-        createPost(data: CreatePostInput!) : Post! 
         createComment(data: CreateCommentInput!) : Comment!
-
+        deleteComment(id: ID!): Comment!
     }
     
     input CreateUserInput {
@@ -27,12 +81,14 @@ const typeDefs = `
         email: String!
         age: Int!
     }
+
     input CreatePostInput {
         title: String!
         body: String!
         published: Boolean! 
         author: ID!
     }
+
     input CreateCommentInput {
         text: String!
         author: ID!
@@ -47,6 +103,7 @@ const typeDefs = `
         posts: [Post!]!
         comments : [Comment!]!
     }
+
     type Post {
         id: ID!
         title: String!
@@ -55,6 +112,7 @@ const typeDefs = `
         author: User!
         comments: [Comment!]!
     }
+
     type Comment {
         id: ID!
         text: String!
@@ -116,6 +174,24 @@ const resolvers = {
     },
     deleteUser(parent, args, ctx, info) {
       const userIndex = users.findIndex((user) => user.id === args.id);
+      if (userIndex === -1) {
+        throw new Error("User not found");
+      }
+
+      const deletedUsers = users.splice(userIndex, 1);
+      //delete posts created by the user
+      posts = posts.filter((post) => {
+        const match = post.author === args.id;
+        //delete comments inside that post, from other/any users
+        if (match) {
+          comments = comments.filter((comment) => comment.post !== post.id);
+        }
+        return !match;
+      });
+      //delete comments created by the user in other posts
+      comments = comments.filter((comment) => comment.author !== args.id);
+
+      return deletedUsers[0];
     },
     createPost(parent, args, ctx, info) {
       const userExists = users.some((user) => user.id === args.data.author);
@@ -129,27 +205,48 @@ const resolvers = {
       posts.push(post);
       return post;
     },
+    deletePost(parent, args, ctx, info) {
+      const postIndex = posts.findIndex((post) => post.id == args.id);
+
+      if (postIndex === -1) {
+        throw new Error("Post not found");
+      }
+
+      const deletedPosts = posts.splice(postIndex, 1);
+
+      comments = comments.filter((comment) => comment.post !== args.id);
+      return deletedPosts[0];
+    },
     createComment(parent, args, ctx, info) {
       const userExists = users.some((user) => user.id === args.data.author);
       if (!userExists) {
         throw new Error("User not found");
       }
-
       const postExistAndPublished = posts.some(
         (post) => post.id === args.data.post && post.published
       );
-
       if (!postExistAndPublished) {
         throw new Error("Post does not exist or is not published");
       }
-
       const comment = {
         id: uuidv4(),
         ...args.data,
       };
-
       comments.push(comment);
       return comment;
+    },
+    deleteComment(parent, args, ctx, info) {
+      const commentIndex = comments.findIndex(
+        (comment) => comment.id == args.id
+      );
+
+      if (commentIndex === -1) {
+        throw new Error("Comment not found");
+      }
+
+      const deletedComments = comments.splice(commentIndex, 1);
+
+      return deletedComments[0];
     },
   },
   //relational data for each type
