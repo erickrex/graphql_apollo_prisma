@@ -55,6 +55,7 @@ const Mutation = {
       user.name = data.name;
     }
 
+    //not possible to input other types because the tydefs in the schema will not allow it
     if (typeof data.age !== "undefined") {
       user.age = data.age;
     }
