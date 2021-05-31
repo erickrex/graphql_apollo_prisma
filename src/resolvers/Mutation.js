@@ -34,6 +34,7 @@ const Mutation = {
 
     return deletedUsers[0];
   },
+  updateUser(parent, args, ctx, info) {},
   createPost(parent, args, { db }, info) {
     const userExists = db.users.some((user) => user.id === args.data.author);
     if (!userExists) {
